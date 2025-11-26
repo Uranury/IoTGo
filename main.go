@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -106,8 +107,12 @@ func (g *GY32) Read() (*SensorData, error) {
 }
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
 	// Get environment variables with defaults
-	influxURL := getEnv("INFLUX_URL", "")
+	influxURL := getEnv("INFLUX_URL", "http://localhost:8086")
 	influxToken := getEnv("INFLUX_TOKEN", "")
 	influxOrg := getEnv("INFLUX_ORG", "")
 	influxBucket := getEnv("INFLUX_BUCKET", "")
@@ -154,8 +159,8 @@ func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
-	log.Fatalf("Environment variable %s not set", key)
-	return ""
+	log.Println("Environment variable %s not set", key)
+	return defaultValue
 }
 
 // readAllSensors reads from all sensors periodically
