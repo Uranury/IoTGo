@@ -44,12 +44,14 @@ services:
       - INFLUX_TOKEN=${SENSOR_APP_INFLUX_TOKEN}
       - INFLUX_ORG=${SENSOR_APP_INFLUX_ORG}
       - INFLUX_BUCKET=${SENSOR_APP_INFLUX_BUCKET}
+      - DHT_PIN=${DHT_PIN:-4}
     depends_on:
       - influxdb
-    # Uncomment for GPIO access on Raspberry Pi
-    # privileged: true
-    # devices:
-    #   - /dev/gpiomem:/dev/gpiomem
+    # GPIO access for Raspberry Pi - REQUIRED for DHT22
+    privileged: true
+    devices:
+      - /dev/gpiomem:/dev/gpiomem
+      - /dev/mem:/dev/mem
     networks:
       - iot-network
     restart: unless-stopped

@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/Uranury/IotGo/sensors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -23,89 +23,6 @@ var (
 	clients      = make(map[*websocket.Conn]bool)
 )
 
-// SensorData is the unified data structure for all sensors
-type SensorData struct {
-	SensorType string             `json:"sensor_type"`
-	Fields     map[string]float64 `json:"fields"`
-	Timestamp  time.Time          `json:"timestamp"`
-}
-
-// Sensor interface that all sensors must implement
-type Sensor interface {
-	Read() (*SensorData, error)
-	Name() string
-}
-
-// DHT11 sensor implementation
-type DHT11 struct {
-	pin int
-}
-
-func (d *DHT11) Name() string {
-	return "DHT11"
-}
-
-func (d *DHT11) Read() (*SensorData, error) {
-	// Simulate reading from GPIO - replace with actual GPIO library
-	temperature := 20.0 + rand.Float64()*10.0
-	humidity := 40.0 + rand.Float64()*40.0
-
-	return &SensorData{
-		SensorType: "dht11",
-		Fields: map[string]float64{
-			"temperature": temperature,
-			"humidity":    humidity,
-		},
-		Timestamp: time.Now(),
-	}, nil
-}
-
-// BMP280 sensor implementation
-type BMP280 struct {
-	address byte
-}
-
-func (b *BMP280) Name() string {
-	return "BMP280"
-}
-
-func (b *BMP280) Read() (*SensorData, error) {
-	// Simulate reading from I2C - replace with actual I2C library
-	pressure := 1000.0 + rand.Float64()*50.0
-	temperature := 20.0 + rand.Float64()*10.0
-
-	return &SensorData{
-		SensorType: "bmp280",
-		Fields: map[string]float64{
-			"pressure":    pressure,
-			"temperature": temperature,
-		},
-		Timestamp: time.Now(),
-	}, nil
-}
-
-// GY32 (BH1750) light sensor implementation
-type GY32 struct {
-	address byte
-}
-
-func (g *GY32) Name() string {
-	return "GY32"
-}
-
-func (g *GY32) Read() (*SensorData, error) {
-	// Simulate reading from I2C - replace with actual I2C library
-	light := 100.0 + rand.Float64()*400.0
-
-	return &SensorData{
-		SensorType: "gy32",
-		Fields: map[string]float64{
-			"light": light,
-		},
-		Timestamp: time.Now(),
-	}, nil
-}
-
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using environment variables")
@@ -117,16 +34,24 @@ func main() {
 	influxOrg := getEnv("INFLUX_ORG", "")
 	influxBucket := getEnv("INFLUX_BUCKET", "")
 
+	dhtPin := getEnv("DHT_PIN", "4")
+
 	// Initialize InfluxDB client
 	influxClient = influxdb2.NewClient(influxURL, influxToken)
 	writeAPI = influxClient.WriteAPI(influxOrg, influxBucket)
 	defer influxClient.Close()
 
+	dht22, err := sensors.NewDHT22(dhtPin)
+	if err != nil {
+		log.Fatalf("Failed to initialize DHT22: %v", err)
+	}
+	defer dht22.Close()
+
 	// Initialize all sensors
-	sensors := []Sensor{
-		&DHT11{pin: 4},
-		&BMP280{address: 0x76},
-		&GY32{address: 0x23},
+	sensors := []sensors.Sensor{
+		dht22,
+		&sensors.BMP280{Address: 0x76},
+		&sensors.GY32{Address: 0x23},
 	}
 
 	// Initialize Gin
@@ -164,7 +89,7 @@ func getEnv(key, defaultValue string) string {
 }
 
 // readAllSensors reads from all sensors periodically
-func readAllSensors(sensors []Sensor) {
+func readAllSensors(sensors []sensors.Sensor) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
@@ -187,7 +112,7 @@ func readAllSensors(sensors []Sensor) {
 	}
 }
 
-func writeToInflux(data *SensorData) {
+func writeToInflux(data *sensors.SensorData) {
 	p := influxdb2.NewPointWithMeasurement("sensor_data").
 		AddTag("sensor", data.SensorType).
 		SetTime(data.Timestamp)
@@ -222,7 +147,7 @@ func handleWebSocket(c *gin.Context) {
 	}
 }
 
-func broadcastToClients(data *SensorData) {
+func broadcastToClients(data *sensors.SensorData) {
 	for client := range clients {
 		if err := client.WriteJSON(data); err != nil {
 			log.Println("WebSocket write error:", err)
