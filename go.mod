@@ -3,11 +3,12 @@ module github.com/Uranury/IotGo
 go 1.25.1
 
 require (
-	github.com/MichaelS11/go-dht v0.1.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/joho/godotenv v1.5.1
+	periph.io/x/conn/v3 v3.7.2
+	periph.io/x/host/v3 v3.8.5
 )
 
 require (
@@ -46,6 +47,4 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
-	periph.io/x/conn/v3 v3.7.2 // indirect
-	periph.io/x/host/v3 v3.8.5 // indirect
 )
