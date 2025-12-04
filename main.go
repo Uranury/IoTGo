@@ -34,7 +34,7 @@ func main() {
 	influxOrg := getEnv("INFLUX_ORG", "")
 	influxBucket := getEnv("INFLUX_BUCKET", "")
 
-	dhtPin := getEnv("DHT_PIN", "4")
+	dhtPin := getEnv("DHT_PIN", "GPIO4")
 
 	// Initialize InfluxDB client
 	influxClient = influxdb2.NewClient(influxURL, influxToken)
@@ -82,6 +82,7 @@ func main() {
 
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
+		log.Println("Environment variable found")
 		return value
 	}
 	log.Println("Environment variable %s not set", key)

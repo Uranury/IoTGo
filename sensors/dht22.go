@@ -83,7 +83,7 @@ func (d *DHT22) readDHT22() (temperature, humidity float64, err error) {
 	lastLevel := d.gpioPin.Read()
 
 	// Wait for response with timeout
-	timeout := time.After(5 * time.Millisecond)
+	timeout := time.After(200 * time.Millisecond)
 	for {
 		select {
 		case <-timeout:

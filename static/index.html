@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>IoT Sensor Dashboard</title>
+    <meta charset="UTF-8"> 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -233,13 +234,13 @@
 
     <script>
         const sensorIcons = {
-            'dht11': '🌡️',
+            'dht22': '🌡️',
             'bmp280': '🌪️',
             'gy32': '💡'
         };
 
         const sensorNames = {
-            'dht11': 'DHT11 - Temp & Humidity',
+            'dht22': 'DHT22 - Temp & Humidity',
             'bmp280': 'BMP280 - Pressure & Temp',
             'gy32': 'GY32 - Light Sensor'
         };
@@ -248,20 +249,26 @@
             'temperature': '°C',
             'humidity': '%',
             'pressure': 'hPa',
-            'light': 'lux'
+            'altitude': 'm',
+            'lux': ' lux'
         };
 
         const sensors = {};
+        let ws = null;
+        let reconnectTimeout = null;
 
         function createSensorCard(sensorType) {
             const card = document.createElement('div');
             card.className = 'card';
             card.id = `sensor-${sensorType}`;
             
+            const icon = sensorIcons[sensorType] || '📊';
+            const name = sensorNames[sensorType] || sensorType.toUpperCase();
+            
             card.innerHTML = `
                 <div class="sensor-name">
-                    <span class="sensor-icon">${sensorIcons[sensorType]}</span>
-                    <span>${sensorNames[sensorType]}</span>
+                    <span class="sensor-icon">${icon}</span>
+                    <span>${name}</span>
                 </div>
                 <div class="readings" id="readings-${sensorType}"></div>
                 <div class="timestamp" id="time-${sensorType}">--</div>
@@ -286,9 +293,10 @@
             for (const [field, value] of Object.entries(data.fields)) {
                 const reading = document.createElement('div');
                 reading.className = 'reading';
+                const unit = units[field] || '';
                 reading.innerHTML = `
                     <div class="reading-label">${field}</div>
-                    <div class="reading-value">${value.toFixed(1)}${units[field]}</div>
+                    <div class="reading-value">${value.toFixed(1)}${unit}</div>
                 `;
                 readingsDiv.appendChild(reading);
             }
@@ -298,36 +306,64 @@
             document.getElementById('last-update').textContent = time;
         }
 
-        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host + '/ws';
+            
+            console.log('Connecting to:', wsUrl);
+            ws = new WebSocket(wsUrl);
 
-        ws.onopen = () => {
-            const s = document.getElementById('status');
-            s.textContent = '🟢 Connected';
-            s.style.color = '#4ade80';
-            s.classList.remove('connecting');
-            document.getElementById('sys-status').textContent = 'Online';
-        };
-        
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            updateSensor(data);
-        };
-        
-        ws.onerror = () => {
-            const s = document.getElementById('status');
-            s.textContent = '❌ Connection Error';
-            s.style.color = '#ef4444';
-            document.getElementById('sys-status').textContent = 'Error';
-        };
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                const s = document.getElementById('status');
+                s.textContent = '🟢 Connected';
+                s.style.color = '#4ade80';
+                s.classList.remove('connecting');
+                document.getElementById('sys-status').textContent = 'Online';
+                
+                if (reconnectTimeout) {
+                    clearTimeout(reconnectTimeout);
+                    reconnectTimeout = null;
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                console.log('Received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    updateSensor(data);
+                } catch (e) {
+                    console.error('Failed to parse message:', e);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                const s = document.getElementById('status');
+                s.textContent = '❌ Connection Error';
+                s.style.color = '#ef4444';
+                document.getElementById('sys-status').textContent = 'Error';
+            };
 
-        ws.onclose = () => {
-            const s = document.getElementById('status');
-            s.textContent = '🔌 Disconnected';
-            s.style.color = '#f59e0b';
-            document.getElementById('sys-status').textContent = 'Offline';
-        };
+            ws.onclose = (event) => {
+                console.log('WebSocket closed:', event.code, event.reason);
+                const s = document.getElementById('status');
+                s.textContent = '🔌 Disconnected - Reconnecting...';
+                s.style.color = '#f59e0b';
+                s.classList.add('connecting');
+                document.getElementById('sys-status').textContent = 'Offline';
+                
+                // Reconnect after 3 seconds
+                reconnectTimeout = setTimeout(() => {
+                    console.log('Attempting to reconnect...');
+                    connectWebSocket();
+                }, 3000);
+            };
+        }
 
+        // Initial connection
         document.getElementById('status').classList.add('connecting');
+        connectWebSocket();
     </script>
 
 </body>
