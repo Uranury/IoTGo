@@ -73,7 +73,7 @@ class DHT22(Sensor):
         self.dht_device.exit()
 
 class BMP280(Sensor):
-    def __init__(self, address: int = 0x76):
+    def __init__(self, address: int = 0x77):
         try:
             i2c = busio.I2C(board.SCL, board.SDA)
             self.bmp280 = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=address)
@@ -103,13 +103,19 @@ class BMP280(Sensor):
 
 class GY32(Sensor):
     def __init__(self, address: int = 0x23):
-        i2c = busio.I2C(board.SCL, board.SDA)
-        self.bh1750 = adafruit_bh1750.BH1750(i2c, address=address)
+        try:
+            i2c = busio.I2C(board.SCL, board.SDA)
+            self.bh1750 = adafruit_bh1750.BH1750(i2c, address=address)
+        except Exception as e:
+            print(f"GY32 initialization failed: {e}")
+            self.bh1750 = None
     
     def name(self) -> str:
         return "GY32"
     
     def read(self) -> Optional[SensorData]:
+        if not self.bh1750:
+            return None
         try:
             return SensorData(
                 sensor_type="gy32",
@@ -119,4 +125,4 @@ class GY32(Sensor):
             )
         except Exception as e:
             print(f"GY32 read error: {e}")
-        return None
+            return None
