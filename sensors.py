@@ -73,7 +73,7 @@ class DHT22(Sensor):
         self.dht_device.exit()
 
 class BMP280(Sensor):
-    def __init__(self, address: int = 0x77):
+    def __init__(self, address: int = 0x76):
         try:
             i2c = busio.I2C(board.SCL, board.SDA)
             self.bmp280 = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=address)

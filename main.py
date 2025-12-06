@@ -82,9 +82,9 @@ async def read_all_sensors(sensors):
                     await broadcast_to_clients(data)
             except Exception as e:
                 print(f"Error reading {sensor.name()}: {e}")
-
-            # Small delay between sensors
-            await asyncio.sleep(0.2)  # 200ms between each sensor
+        
+        # Wait before reading all sensors again
+        await asyncio.sleep(2)  # Read all sensors every 2 seconds
 
 
 async def websocket_handler(request):
