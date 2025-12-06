@@ -1,4 +1,4 @@
-Adafruit-Blinka==8.68.0
+Adafruit-Blinka>=8.47.0
 adafruit-circuitpython-bh1750==1.1.17
 adafruit-circuitpython-bmp280==3.3.9
 adafruit-circuitpython-busdevice==5.2.14
@@ -7,7 +7,7 @@ adafruit-circuitpython-dht==4.0.10
 adafruit-circuitpython-register==1.11.1
 adafruit-circuitpython-requests==4.1.15
 adafruit-circuitpython-typing==1.12.3
-Adafruit-PlatformDetect==3.85.0
+Adafruit-PlatformDetect>=3.70.0
 Adafruit-PureIO==1.1.11
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.2

@@ -19,6 +19,15 @@ INFLUX_ORG = os.getenv("INFLUX_ORG", "")
 INFLUX_BUCKET = os.getenv("INFLUX_BUCKET", "")
 DHT_PIN = os.getenv("DHT_PIN", "GPIO4")
 
+# Debug: Print configuration
+print("=" * 50)
+print("INFLUXDB CONFIGURATION:")
+print(f"INFLUX_URL: {INFLUX_URL}")
+print(f"INFLUX_TOKEN: {INFLUX_TOKEN}")
+print(f"INFLUX_ORG: {INFLUX_ORG}")
+print(f"INFLUX_BUCKET: {INFLUX_BUCKET}")
+print("=" * 50)
+
 # WebSocket clients
 ws_clients: Set[web.WebSocketResponse] = set()
 
@@ -28,33 +37,55 @@ write_api = None
 
 def init_influx():
     global influx_client, write_api
-    influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-    write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+    try:
+        print("Initializing InfluxDB client...")
+        influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+        write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+        
+        # Test the connection
+        health = influx_client.health()
+        print(f"✓ InfluxDB client initialized successfully - Status: {health.status}")
+    except Exception as e:
+        print(f"✗ InfluxDB initialization failed: {e}")
 
 def write_to_influx(data):
     if write_api is None:
+        print("WARNING: write_api is None, skipping write")
         return
     
-    point = Point("sensor_data") \
-        .tag("sensor", data.sensor_type) \
-        .time(data.timestamp)
-    
-    for key, value in data.fields.items():
-        point = point.field(key, value)
-    
     try:
+        # Use current time in UTC
+        from datetime import timezone
+        timestamp = datetime.now(timezone.utc)
+        
+        point = Point("sensor_data") \
+            .tag("sensor", data.sensor_type) \
+            .time(timestamp)
+        
+        for key, value in data.fields.items():
+            point = point.field(key, float(value))
+        
+        # Debug: print the point before writing
+        print(f"DEBUG: Writing point: measurement=sensor_data, tag=sensor:{data.sensor_type}, fields={data.fields}, time={timestamp}")
+        
+        # Write with explicit bucket and org
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+        
+        print(f"✓ Written to InfluxDB: {data.sensor_type} - {data.fields}")
     except Exception as e:
-        print(f"InfluxDB write error: {e}")
+        import traceback
+        print(f"✗ InfluxDB write error: {e}")
+        print(f"✗ Full traceback:")
+        traceback.print_exc()
 
 async def broadcast_to_clients(data):
     if not ws_clients:
         return
     
     message_dict = {
-        "sensor_type": data.sensor_type,         # match JS
-        "fields": {k.lower(): v for k, v in data.fields.items()},  # lowercase keys
-        "timestamp": data.timestamp.isoformat()  # convert datetime to string
+        "sensor_type": data.sensor_type,
+        "fields": {k.lower(): v for k, v in data.fields.items()},
+        "timestamp": data.timestamp.isoformat()
     }
     
     message = json.dumps(message_dict)
@@ -84,7 +115,7 @@ async def read_all_sensors(sensors):
                 print(f"Error reading {sensor.name()}: {e}")
         
         # Wait before reading all sensors again
-        await asyncio.sleep(2)  # Read all sensors every 2 seconds
+        await asyncio.sleep(2)
 
 
 async def websocket_handler(request):
