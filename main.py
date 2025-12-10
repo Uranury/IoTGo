@@ -1,6 +1,7 @@
 import os
 import asyncio
 import json
+import logging
 from datetime import datetime
 from typing import Set
 from aiohttp import web, WSMsgType
@@ -8,6 +9,13 @@ from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
 from sensors import DHT22, BMP280, GY32, Sensor
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -20,13 +28,13 @@ INFLUX_BUCKET = os.getenv("INFLUX_BUCKET", "")
 DHT_PIN = os.getenv("DHT_PIN", "GPIO4")
 
 # Debug: Print configuration
-print("=" * 50)
-print("INFLUXDB CONFIGURATION:")
-print(f"INFLUX_URL: {INFLUX_URL}")
-print(f"INFLUX_TOKEN: {INFLUX_TOKEN}")
-print(f"INFLUX_ORG: {INFLUX_ORG}")
-print(f"INFLUX_BUCKET: {INFLUX_BUCKET}")
-print("=" * 50)
+logger.info("=" * 50)
+logger.info("INFLUXDB CONFIGURATION:")
+logger.info(f"INFLUX_URL: {INFLUX_URL}")
+logger.info(f"INFLUX_TOKEN: {INFLUX_TOKEN}")
+logger.info(f"INFLUX_ORG: {INFLUX_ORG}")
+logger.info(f"INFLUX_BUCKET: {INFLUX_BUCKET}")
+logger.info("=" * 50)
 
 # WebSocket clients
 ws_clients: Set[web.WebSocketResponse] = set()
@@ -38,19 +46,19 @@ write_api = None
 def init_influx():
     global influx_client, write_api
     try:
-        print("Initializing InfluxDB client...")
+        logger.info("Initializing InfluxDB client...")
         influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
         write_api = influx_client.write_api(write_options=SYNCHRONOUS)
         
         # Test the connection
         health = influx_client.health()
-        print(f"✓ InfluxDB client initialized successfully - Status: {health.status}")
+        logger.info(f"✓ InfluxDB client initialized successfully - Status: {health.status}")
     except Exception as e:
-        print(f"✗ InfluxDB initialization failed: {e}")
+        logger.error(f"✗ InfluxDB initialization failed: {e}")
 
 def write_to_influx(data):
     if write_api is None:
-        print("WARNING: write_api is None, skipping write")
+        logger.warning("write_api is None, skipping write")
         return
     
     try:
@@ -65,54 +73,52 @@ def write_to_influx(data):
         for key, value in data.fields.items():
             point = point.field(key, float(value))
         
-        # Debug: print the point before writing
-        print(f"DEBUG: Writing point: measurement=sensor_data, tag=sensor:{data.sensor_type}, fields={data.fields}, time={timestamp}")
+        logger.debug(f"Writing point: measurement=sensor_data, tag=sensor:{data.sensor_type}, fields={data.fields}, time={timestamp}")
         
         # Write with explicit bucket and org
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
         
-        print(f"✓ Written to InfluxDB: {data.sensor_type} - {data.fields}")
+        logger.info(f"✓ Written to InfluxDB: {data.sensor_type} - {data.fields}")
     except Exception as e:
-        import traceback
-        print(f"✗ InfluxDB write error: {e}")
-        print(f"✗ Full traceback:")
-        traceback.print_exc()
+        logger.error(f"✗ InfluxDB write error: {e}", exc_info=True)
 
 async def broadcast_to_clients(data):
     if not ws_clients:
         return
     
+    # Create message once for all clients
     message_dict = {
         "sensor_type": data.sensor_type,
         "fields": {k.lower(): v for k, v in data.fields.items()},
         "timestamp": data.timestamp.isoformat()
     }
-    
     message = json.dumps(message_dict)
-    disconnected = set()
     
-    for ws in ws_clients:
-        try:
-            await ws.send_str(message)
-        except Exception as e:
-            print(f"WebSocket send error: {e}")
-            disconnected.add(ws)
+    # Broadcast to all clients concurrently
+    tasks = [ws.send_str(message) for ws in ws_clients]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     
-    # Remove disconnected clients
-    for ws in disconnected:
-        ws_clients.discard(ws)
+    # Clean up disconnected clients
+    disconnected = {ws for ws, result in zip(ws_clients, results) 
+                   if isinstance(result, Exception)}
+    
+    if disconnected:
+        ws_clients.difference_update(disconnected)
+        logger.info(f"Removed {len(disconnected)} disconnected client(s)")
 
 async def read_all_sensors(sensors):
     while True:
-        for sensor in sensors:
-            try:
-                data = sensor.read()
-                if data:
-                    print(f"{sensor.name()}: {data.fields}")
-                    write_to_influx(data)
-                    await broadcast_to_clients(data)
-            except Exception as e:
-                print(f"Error reading {sensor.name()}: {e}")
+        # Read all sensors concurrently
+        tasks = [asyncio.to_thread(sensor.read) for sensor in sensors]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for sensor, result in zip(sensors, results):
+            if isinstance(result, Exception):
+                logger.error(f"Error reading {sensor.name()}: {result}")
+            elif result:
+                logger.info(f"{sensor.name()}: {result.fields}")
+                write_to_influx(result)
+                await broadcast_to_clients(result)
         
         # Wait before reading all sensors again
         await asyncio.sleep(2)
@@ -123,15 +129,15 @@ async def websocket_handler(request):
     await ws.prepare(request)
     
     ws_clients.add(ws)
-    print(f"Client connected. Total clients: {len(ws_clients)}")
+    logger.info(f"Client connected. Total clients: {len(ws_clients)}")
     
     try:
         async for msg in ws:
             if msg.type == WSMsgType.ERROR:
-                print(f'WebSocket connection closed with exception {ws.exception()}')
+                logger.error(f'WebSocket connection closed with exception {ws.exception()}')
     finally:
         ws_clients.discard(ws)
-        print(f"Client disconnected. Total clients: {len(ws_clients)}")
+        logger.info(f"Client disconnected. Total clients: {len(ws_clients)}")
     
     return ws
 
@@ -154,24 +160,24 @@ async def init_app():
     sensors = []
     try:
         sensors.append(DHT22(DHT_PIN))
-        print(f"✓ DHT22 initialized on {DHT_PIN}")
+        logger.info(f"✓ DHT22 initialized on {DHT_PIN}")
     except Exception as e:
-        print(f"✗ DHT22 initialization failed: {e}")
+        logger.error(f"✗ DHT22 initialization failed: {e}")
     
     try:
         sensors.append(BMP280(address=0x76))
-        print("✓ BMP280 initialized")
+        logger.info("✓ BMP280 initialized")
     except Exception as e:
-        print(f"✗ BMP280 initialization failed: {e}")
+        logger.error(f"✗ BMP280 initialization failed: {e}")
     
     try:
         sensors.append(GY32(address=0x23))
-        print("✓ GY32 initialized")
+        logger.info("✓ GY32 initialized")
     except Exception as e:
-        print(f"✗ GY32 initialization failed: {e}")
+        logger.error(f"✗ GY32 initialization failed: {e}")
     
     if not sensors:
-        print("WARNING: No sensors initialized!")
+        logger.warning("No sensors initialized!")
     
     # Save sensors to app for background task
     app['sensors'] = sensors
