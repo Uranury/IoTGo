@@ -154,20 +154,65 @@
             background: rgba(255,255,255,0.05);
             border-radius: 18px;
             padding: 25px;
-            text-align: center;
-            color: #94a3b8;
             border: 1px solid rgba(255,255,255,0.07);
         }
 
-        .chart-placeholder {
-            margin-top: 10px;
-            height: 200px;
+        .chart-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #93c5fd;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
             background: rgba(255,255,255,0.03);
             border-radius: 12px;
-            border: 1px dashed rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        .chart-header {
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #93c5fd;
+        }
+
+        .open-btn {
+            padding: 8px 16px;
+            background: rgba(56, 189, 248, 0.2);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            border-radius: 8px;
+            color: #38bdf8;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .open-btn:hover {
+            background: rgba(56, 189, 248, 0.3);
+            border-color: rgba(56, 189, 248, 0.6);
+        }
+
+        .chart-iframe {
+            width: 100%;
+            height: 350px;
+            border: none;
+            display: block;
         }
 
         
@@ -222,9 +267,66 @@
 
        
         <div class="chart-section">
-            <h2>📈 Real-Time Charts (Coming Soon)</h2>
-            <div class="chart-placeholder">Charts will appear here</div>
+            <h2>📈 Real-Time Charts</h2>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">🌡️ Temperature</div>
+                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-1', '_blank')">
+                            Open in Grafana
+                        </button>
+                    </div>
+                    <iframe 
+                        class="chart-iframe"
+                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=1&refresh=5s&theme=dark"
+                        frameborder="0">
+                    </iframe>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">💧 Humidity</div>
+                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-2', '_blank')">
+                            Open in Grafana
+                        </button>
+                    </div>
+                    <iframe 
+                        class="chart-iframe"
+                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=2&refresh=5s&theme=dark"
+                        frameborder="0">
+                    </iframe>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">🌡️ Altitude</div>
+                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-4', '_blank')">
+                            Open in Grafana
+                        </button>
+                    </div>
+                    <iframe 
+                        class="chart-iframe"
+                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=4&refresh=5s&theme=dark"
+                        frameborder="0">
+                    </iframe>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">🌡️ Pressure</div>
+                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-3', '_blank')">
+                            Open in Grafana
+                        </button>
+                    </div>
+                    <iframe 
+                        class="chart-iframe"
+                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=3&refresh=5s&theme=dark"
+                        frameborder="0">
+                    </iframe>
+                </div>
+            </div>
         </div>
+        
 
         <div class="footer">
             IoT Monitoring Dashboard • Created for KBTU • 2025<br>
