@@ -269,63 +269,90 @@
         <div class="chart-section">
             <h2>📈 Real-Time Charts</h2>
             <div class="charts-grid">
+        
+                <!-- Temperature -->
                 <div class="chart-card">
                     <div class="chart-header">
                         <div class="chart-title">🌡️ Temperature</div>
-                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-1', '_blank')">
+                        <button class="open-btn"
+                            onclick="window.open('http://raspberrypi.local:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-1', '_blank')">
                             Open in Grafana
                         </button>
                     </div>
-                    <iframe 
+                    <iframe
                         class="chart-iframe"
-                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=1&refresh=5s&theme=dark"
+                        src="http://raspberrypi.local:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=1&refresh=5s&theme=dark"
                         frameborder="0">
                     </iframe>
                 </div>
-
+        
+                <!-- Humidity -->
                 <div class="chart-card">
                     <div class="chart-header">
                         <div class="chart-title">💧 Humidity</div>
-                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-2', '_blank')">
+                        <button class="open-btn"
+                            onclick="window.open('http://raspberrypi.local:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-2', '_blank')">
                             Open in Grafana
                         </button>
                     </div>
-                    <iframe 
+                    <iframe
                         class="chart-iframe"
-                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=2&refresh=5s&theme=dark"
+                        src="http://raspberrypi.local:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=2&refresh=5s&theme=dark"
                         frameborder="0">
                     </iframe>
                 </div>
-
+        
+                <!-- Altitude -->
                 <div class="chart-card">
                     <div class="chart-header">
                         <div class="chart-title">🌡️ Altitude</div>
-                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-4', '_blank')">
+                        <button class="open-btn"
+                            onclick="window.open('http://raspberrypi.local:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-4', '_blank')">
                             Open in Grafana
                         </button>
                     </div>
-                    <iframe 
+                    <iframe
                         class="chart-iframe"
-                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=4&refresh=5s&theme=dark"
+                        src="http://raspberrypi.local:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=4&refresh=5s&theme=dark"
+                        frameborder="0">
+                    </iframe>
+                </div>
+        
+                <!-- Pressure -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">🌡️ Pressure</div>
+                        <button class="open-btn"
+                            onclick="window.open('http://raspberrypi.local:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-3', '_blank')">
+                            Open in Grafana
+                        </button>
+                    </div>
+                    <iframe
+                        class="chart-iframe"
+                        src="http://raspberrypi.local:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=3&refresh=5s&theme=dark"
                         frameborder="0">
                     </iframe>
                 </div>
 
+                <!-- Brightness -->
                 <div class="chart-card">
                     <div class="chart-header">
-                        <div class="chart-title">🌡️ Pressure</div>
-                        <button class="open-btn" onclick="window.open('http://172.20.10.9:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-3', '_blank')">
+                        <div class="chart-title">💡 Brightness</div>
+                        <button class="open-btn"
+                            onclick="window.open('http://raspberrypi.local:3000/d/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&viewPanel=panel-5', '_blank')">
                             Open in Grafana
                         </button>
                     </div>
-                    <iframe 
+                    <iframe
                         class="chart-iframe"
-                        src="http://172.20.10.9:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=3&refresh=5s&theme=dark"
+                        src="http://raspberrypi.local:3000/d-solo/adfq22z/multi-sensor-data?orgId=1&from=now-5m&to=now&timezone=browser&panelId=5&refresh=5s&theme=dark"
                         frameborder="0">
                     </iframe>
                 </div>
+        
             </div>
         </div>
+        
         
 
         <div class="footer">
